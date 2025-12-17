@@ -23,3 +23,85 @@ Direct encodings are the most straightforward type of encoding -- it involves cr
 \subsection{Order Encoding}
 
 Order follows the same principle as direct encoding, but instead of each boolean variable `specifying' a value in the way that direct encodings do, each bit specifies whether the integer corresponding to it is less than or equal to the integer variable's value.
+
+\subsection{Why having multiple types of encoding?}
+
+Different types of encoding have different strengths and weaknesses in terms of performance. For example, direct encodings are very fast for problems that involve a lot of equality constraints, but they can be quite slow for problems that involve a lot of inequality constraints. Logarithmic encodings, on the other hand, are very fast for problems that involve a lot of inequality constraints, but they can be quite slow for problems that involve a lot of equality constraints. Order encodings are kind of a "middle ground" between the two, and can be used for problems that involve both types of constraints.
+
+\subsubsection{Examples illustrating encoding choices}
+
+\paragraph{Direct encoding (equality / all-different).}
+\begin{verbatim}
+find x,y,z : int(1..3)
+such that
+    x != y,
+    y != z,
+    x != z
+\end{verbatim}
+
+\noindent
+\textbf{Why direct works well:}
+In a direct encoding, each possible value of a variable is represented explicitly by a Boolean. 
+(Here I realised that we don't really have a good explanation of direct encoding earlier. TODO: add one)
+The constraint $x \neq y$ can therefore be expressed by a small set of simple clauses that forbid
+$x$ and $y$ from taking the same value.
+For this example, all constraints are pairwise equalities, so they translate directly into short, local clauses that immediately rule out conflicting assignments.
+In contrast, a logarithmic encoding would require reasoning over multiple bits to detect equality,
+resulting in weaker propagation and more complex clauses.
+
+\paragraph{Logarithmic encoding (arithmetic / inequalities).}
+\begin{verbatim}
+find x,y : int(0..15)
+such that
+    x + y <= 12,
+    x < y
+\end{verbatim}
+
+\noindent
+\textbf{Why logarithmic works well:}
+Here the constraints are dominated by arithmetic and ordering.
+With a logarithmic encoding, $x$ and $y$ are represented using only four bits each, and both
+$x < y$ and $x + y \le 12$ can be compiled into standard comparator and adder circuits (which is what I think is happening in our conjure-oxide implementation. I need Henry hlep here).
+This results in a relatively small number of Boolean variables and avoids enumerating forbidden
+value pairs.
+A direct encoding would require clauses for many combinations of $(x,y)$ whose sum exceeds $12$,
+leading to a much larger and less structured SAT instance.
+
+\paragraph{Order encoding (bounds / ranges / cardinality).}
+\begin{verbatim}
+find x,y,z : int(1..10)
+such that
+    x <= 4,
+    y <= 4,
+    z <= 4
+\end{verbatim}
+
+\noindent
+\textbf{Why order works well:}
+Order encodings are particularly effective for bound constraints.
+Each constraint of the form $x \le k$ can be enforced by setting a single Boolean variable,
+which immediately propagates through the ordering structure of the encoding.
+As a result, the SAT solver can prune large parts of the search space early.
+In comparison, both direct and logarithmic encodings would require multiple clauses to express
+the same bound, making propagation less immediate.
+
+\paragraph{Mixed illustration.}
+\begin{verbatim}
+find x,y : int(1..8)
+such that
+    x != y,
+    x + y <= 9
+\end{verbatim}
+
+\noindent
+\textbf{Why this is challenging:}
+This example combines equality and arithmetic constraints.
+The inequality $x \neq y$ is naturally handled by a direct encoding, while the arithmetic constraint
+$x + y \le 9$ is more naturally handled by a logarithmic encoding.
+Any single encoding choice therefore favours one constraint at the expense of the other.
+This motivates the need for supporting multiple encodings, and potentially hybrid approaches,
+where different variables or constraints are encoded using different strategies.
+
+\subsection{Current implementation status}
+
+As of now (17/12/2025), only Logarithmic Encodings have been implemented in conjure oxide. Future work includes implementing Direct and Order Encodings to provide more options for different types of constraint problems. We also are looking into hybrid approaches that can combine multiple encoding types within a single problem instance to leverage the strengths of each where appropriate.
