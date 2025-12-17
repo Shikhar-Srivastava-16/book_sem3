@@ -1,0 +1,13 @@
+\section{Functional Rust}
+
+Consider the following oft-quoted statement about Rust:
+
+\textit{Rust is blazingly fast and memory-efficient: with no runtime or garbage collector. Rust's rich type system and ownership model guarantee memory-safety and thread-safety — enabling you to eliminate many classes of bugs at compile-time.}
+
+Taken specifically from the Rust Foundation's\footnote{Who are, of course, an entirely unbiased source} page talking about why rust is a good language to use. 
+
+But let us focus on the implications of this statement on conjure oxide specifically. The key details that one needs to know here are that despite arguably being imperative, Rust adopts a lot of functional programming concepts in its design\footnote{Rust's original development language was OCaml, which is functional. The original developers adopted quite a few functional programming concepts from OCaml}. This is significant because the conjure oxide codebase uses a lot of these functional programming concepts. 
+
+Why do this? Making use of these allows for the codebase to use the Rust type system to eliminate failing cases using the code style and make the code more robust. It also makes the code far easier to write, because Rust's safety system enforces the return type of functions. By using the \texttt{Result} type, functions can explicitly state failure or success. It also allows for all functions to call each other linearly in a safe manner\footnote{Think of this as calling functions in the style that one might in a loosey-goosey language like python without any enforced typing, except with enforced types}. 
+
+This allows for the code to be written in such a way that the functions can do essentially whatever they need to do as long as they record the success/failure result. The error type allows for error propogation in a more sophisticiated manner than exit codes, while still being more efficient than exceptions. 
